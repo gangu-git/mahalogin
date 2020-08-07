@@ -1,0 +1,41 @@
+pipeline{
+    agent any
+    stages{
+        stage('get som code from git repo'){
+            steps {
+                git 'https://github.com/gangu-git/mahalogin.git'
+            }
+        }
+        stage('maven compile'){
+            steps{
+                sh 'mvn compile'
+            }
+        }
+        stage('mvn testing'){
+            steps{
+                sh 'mvn test'
+            }
+        }
+        stage('mvn package'){
+          steps{
+              sh 'mvn package'
+          }
+      }
+      stage('deployment'){
+          steps {
+              sh label: '', script: '''mkdir projects
+cd projects
+cp /var/lib/jenkins/workspace/condep/target/mahaLogin-1.0.war .
+touch Dockerfile
+cat<<EOT>>Dockerfile
+FROME tomcat
+ADD mahaLogin-1.0.war /usr/local/tomcat/webapps/
+CMD [ "catalina.sh", "run" ] 
+EXPOSE 8080
+EOT
+docker build -t mahaimage .
+docker run -d --name mahacon1 -p 8888:8080 mahaimage'''
+          }
+      }
+    }
+}
